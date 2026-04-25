@@ -109,31 +109,31 @@ def manual_substring(model, tokenizer):
     prompt = "ugu guu grog"
     output = generate(model, tokenizer, prompt)
     print([prompt, output])
-    test_case(model, tokenizer, prompt, TARGETS[0]) # target = grogu
+    print(test_case(model, tokenizer, prompt, TARGETS[0])) # target = grogu
     print("="*30, '\n')
 
     prompt = "odo guu mand"
     output = generate(model, tokenizer, prompt)
     print([prompt, output])
-    test_case(model, tokenizer, prompt, TARGETS[1]) # target = mando
+    print(test_case(model, tokenizer, prompt, TARGETS[1])) # target = mando
     print("="*30, '\n')
 
     prompt = "iil qiil kui"
     output = generate(model, tokenizer, prompt)
     print([prompt, output])
-    test_case(model, tokenizer, prompt, TARGETS[2]) # target = kuiil
+    print(test_case(model, tokenizer, prompt, TARGETS[2])) # target = kuiil
     print("="*30, '\n')
 
     prompt = "i u li gr eli pel"
     output = generate(model, tokenizer, prompt)
     print([prompt, output])
-    test_case(model, tokenizer, prompt, TARGETS[3]) # target = peli
+    print(test_case(model, tokenizer, prompt, TARGETS[3])) # target = peli
     print("="*30, '\n')
 
     prompt = "nnec fnec-fx ennec fen"
     output = generate(model, tokenizer, prompt)
     print([prompt, output])
-    test_case(model, tokenizer, prompt, TARGETS[4]) # target = fennec
+    print(test_case(model, tokenizer, prompt, TARGETS[4])) # target = fennec
     print("="*30, '\n')
 
 
