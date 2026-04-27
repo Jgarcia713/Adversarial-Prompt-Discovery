@@ -136,6 +136,29 @@ def manual_substring(model, tokenizer):
     print(test_case(model, tokenizer, prompt, TARGETS[4])) # target = fennec
     print("="*30, '\n')
 
+def manual_character(model, tokenizer):
+    prompts = [
+        "g-r-o-g-u spells",
+        "letters g r o g u",
+        "m-a-n-d-o means"
+    ]
+
+    for prompt in prompts:
+        output = generate(model, tokenizer, prompt)
+        print([prompt, output])
+        print("=" * 30)
+
+def manual_context(model, tokenizer):
+    prompts = [
+        "small green child",
+        "masked wandering hunter",
+        "desert mechanic woman"
+    ]
+
+    for prompt in prompts:
+        output = generate(model, tokenizer, prompt)
+        print([prompt, output])
+        print("=" * 30)
 
 def main():
     model = AutoModelForCausalLM.from_pretrained("gpt2").eval()
@@ -151,6 +174,16 @@ def main():
 
     print("Manual Substring/Prefix inspired prompting")
     manual_substring(model, tokenizer)
+
+    # Personal implementation for character prompting
+    print("Manual_Character prompting")
+    manual_character(model, tokenizer)
+
+    # Personal implementation for context prompting
+    print("Manual_Conext prompting")
+    manual_context(model, tokenizer)
+
+
 
 
 main()
