@@ -8,6 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import torch.nn.functional as F
 import random
+import re
 from collections import Counter
 
 MAX_PROMPT_TOKENS = 10
@@ -44,7 +45,8 @@ def test_case(model, tokenizer, prompt, keyword, max_tokens=MAX_PROMPT_TOKENS):
     
     # Condition 3: keyword in generated output
     output = generate(model, tokenizer, prompt)
-    if keyword.lower() in output.lower():
+    # outputted word should be standalone. e.x. "a grogu b" is good, "agrogub" is not
+    if re.search(fr"\b{keyword.lower()}\b", output.lower()):
         return (True, f"PASS: output = {repr(output)}")
     else:
         return (False, f"FAIL [constraint 3]: output = {repr(output)}")
