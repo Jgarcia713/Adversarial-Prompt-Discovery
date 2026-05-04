@@ -6,6 +6,7 @@ Use `test_case` to ensure an input is valid
 """
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+import time
 
 MAX_PROMPT_TOKENS = 10
 GENERATION_LENGTH = 32
@@ -137,28 +138,150 @@ def manual_substring(model, tokenizer):
     print("="*30, '\n')
 
 def manual_character(model, tokenizer):
-    prompts = [
-        "g-r-o-g-u spells",
-        "letters g r o g u",
-        "m-a-n-d-o means"
-    ]
+    tests = {
+        "grogu": [
+            "g-r-o-g-u spells",
+            "letters g r o g u",
+            "g r o g u"
+        ],
 
-    for prompt in prompts:
-        output = generate(model, tokenizer, prompt)
-        print([prompt, output])
-        print("=" * 30)
+        "mando": [
+            "m-a-n-d-o means",
+            "letters m a n d o",
+            "m a n d o"
+        ],
+
+        "kuiil": [
+            "k-u-i-i-l",
+            "letters k u i i l",
+            "k u i i l"
+        ],
+
+        "peli": [
+            "p-e-l-i",
+            "letters p e l i",
+            "p e l i"
+        ],
+
+        "fennec": [
+            "f-e-n-n-e-c",
+            "letters f e n n e c",
+            "f e n n e c"
+        ]
+    }
+
+    print("\n=== Manual Character Prompting ===\n")
+
+    for target, prompts in tests.items():
+
+        start_time = time.time()
+
+        prompts_tested = 0
+        success = False
+        best_prompt = "N/A"
+
+        print(f"\nTesting target: {target}")
+        print("-" * 50)
+
+        for prompt in prompts:
+            prompts_tested += 1
+
+            output = generate(model, tokenizer, prompt)
+            passed, msg = test_case(model, tokenizer, prompt, target)
+
+            print("Prompt:", prompt)
+            print("Output:", output[:100], "...")
+
+            if passed:
+                success = True
+                best_prompt = prompt
+
+            print(msg)
+            print()
+
+        end_time = time.time()
+        runtime_minutes = (end_time - start_time) / 60
+
+        print("SUMMARY")
+        print(f"Success: {'Y' if success else 'N'}")
+        print(f"Prompts Tested: {prompts_tested}")
+        print(f"Time: {runtime_minutes:.3f} min")
+        print(f"Best Prompt: {best_prompt}")
+        print("=" * 60)
 
 def manual_context(model, tokenizer):
-    prompts = [
-        "small green child",
-        "masked wandering hunter",
-        "desert mechanic woman"
-    ]
+    tests = {
+        "grogu": [
+            "tiny green infant",
+            "green alien child",
+            "small mysterious infant"
+        ],
 
-    for prompt in prompts:
-        output = generate(model, tokenizer, prompt)
-        print([prompt, output])
-        print("=" * 30)
+        "mando": [
+            "masked bounty hunter",
+            "wandering masked fighter",
+            "silent helmet warrior"
+        ],
+
+        "kuiil": [
+            "old wise mechanic",
+            "desert engineer elder",
+            "quiet old inventor"
+        ],
+
+        "peli": [
+            "desert repair woman",
+            "spaceport mechanic",
+            "rough mechanic woman"
+        ],
+
+        "fennec": [
+            "silent assassin hunter",
+            "sharp sniper woman",
+            "desert assassin"
+        ]
+    }
+
+    print("\n=== Manual Context Prompting ===\n")
+
+    for target, prompts in tests.items():
+
+        start_time = time.time()
+
+        prompts_tested = 0
+        success = False
+        best_prompt = "N/A"
+
+        print(f"\nTesting target: {target}")
+        print("-" * 50)
+
+        for prompt in prompts:
+            prompts_tested += 1
+
+            output = generate(model, tokenizer, prompt)
+            passed, msg = test_case(model, tokenizer, prompt, target)
+
+            print("Prompt:", prompt)
+            print("Output:", output[:100], "...")
+
+            # Checking output is Passed
+            if passed:
+                success = True
+                # Choosing that prompt as best if passed
+                best_prompt = prompt
+
+            print(msg)
+            print()
+
+        end_time = time.time()
+        runtime_minutes = (end_time - start_time) / 60
+
+        print("SUMMARY")
+        print(f"Success: {'Y' if success else 'N'}")
+        print(f"Prompts Tested: {prompts_tested}")
+        print(f"Time: {runtime_minutes:.3f} min")
+        print(f"Best Prompt: {best_prompt}")
+        print("=" * 60)
 
 def main():
     model = AutoModelForCausalLM.from_pretrained("gpt2").eval()
@@ -180,8 +303,8 @@ def main():
     manual_character(model, tokenizer)
 
     # Personal implementation for context prompting
-    print("Manual_Conext prompting")
-    manual_context(model, tokenizer)
+    # print("Manual_Conext prompting")
+    # manual_context(model, tokenizer)
 
 
 
