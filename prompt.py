@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import random
 import re
 from collections import Counter
+import time
 
 MAX_PROMPT_TOKENS = 10
 GENERATION_LENGTH = 32
@@ -455,6 +456,318 @@ def check_near_miss(model, tokenizer, target, n_attempts=10):
             return True
     return False
 
+def manual_phonetic(model, tokenizer):
+    # AI Usage for developing manual_character searching method. 
+    # Repeated structural methods for manual prompting the AI
+    tests = {
+        "grogu": [
+            "rogue goo",
+            "grow goo",
+            "sounds like grow goo"
+        ],
+        "mando": [
+            "man doe",
+            "sounds like man doe",
+            "rhymes with can doe"
+        ],
+        "kuiil": [
+            "kweel",
+            "sounds like kweel",
+            "rhymes with wheel"
+        ],
+        "peli": [
+            "pelly",
+            "sounds like pelly",
+            "rhymes with jelly"
+        ],
+        "fennec": [
+            "fen neck",
+            "sounds like fen neck",
+            "rhymes with ten neck"
+        ]
+    }
+
+    print("\n=== Manual Character Prompting ===\n")
+    for target, prompts in tests.items():
+        # Setting start time
+        start_time = time.time()
+
+        # Fields for verifying prompts, success, and best prompt
+        prompts_tested = 0
+        success = False
+        best_prompt = "N/A"
+
+        print(f"\nTesting target: {target}")
+        print("-" * 50)
+
+        # Iterting through all of the prompts
+        for prompt in prompts:
+            prompts_tested += 1
+            # Generating the output and printing out the messages
+            output = generate(model, tokenizer, prompt)
+            passed, msg = test_case(model, tokenizer, prompt, target)
+
+            print("Prompt:", prompt)
+            print("Output:", output[:100], "...")
+            # Checking if it passed
+            if passed:
+                success = True
+                best_prompt = prompt
+            # Finally, print the message
+            print(msg)
+            print()
+
+        end_time = time.time()
+        runtime_minutes = (end_time - start_time) / 60
+
+        print("SUMMARY")
+        print(f"Success: {'Y' if success else 'N'}")
+        print(f"Prompts Tested: {prompts_tested}")
+        print(f"Time: {runtime_minutes:.3f} min")
+        print(f"Best Prompt: {best_prompt}")
+        print("=" * 60)
+
+'''
+manual_acronym(model, tokenizer) - This method serves as one of the manual prompting methods
+for testing and running the GPT-2 Model. This has test for checking acronyms based on grogu, mando
+kuiil, peli, and fennec. It goes through all of the prompts and runs each one, one by one.
+It doesn't return anything, just prints out the results
+    @param model - The model (GPT-2)
+    @param tokenizer - The tokenizer being used to generate the results for the model
+
+    @return
+        Void, it doesn't return anything, it simply prints out the results of the prompts.
+'''
+def manual_acronym(model, tokenizer):
+    tests = {
+        "grogu": [
+            "G R O G U stands for",
+            "the initials G R O G U mean",
+            "G-R-O-G-U means"
+        ],
+        "mando": [
+            "M A N D O stands for",
+            "the initials M A N D O mean",
+            "M-A-N-D-O means"
+        ],
+        "kuiil": [
+            "K U I I L stands for",
+            "the initials K U I I L mean",
+            "K-U-I-I-L means"
+        ],
+        "peli": [
+            "P E L I stands for",
+            "the initials P E L I mean",
+            "P-E-L-I means"
+        ],
+        "fennec": [
+            "F E N N E C stands for",
+            "the initials F E N N E C mean",
+            "F-E-N-N-E-C means"
+        ]
+    }
+
+    print("\n=== Manual Character Prompting ===\n")
+    for target, prompts in tests.items():
+        # Setting start time
+        start_time = time.time()
+
+        # Fields for verifying prompts, success, and best prompt
+        prompts_tested = 0
+        success = False
+        best_prompt = "N/A"
+
+        print(f"\nTesting target: {target}")
+        print("-" * 50)
+
+        # Iterting through all of the prompts
+        for prompt in prompts:
+            prompts_tested += 1
+            # Generating the output and printing out the messages
+            output = generate(model, tokenizer, prompt)
+            passed, msg = test_case(model, tokenizer, prompt, target)
+
+            print("Prompt:", prompt)
+            print("Output:", output[:100], "...")
+            # Checking if it passed
+            if passed:
+                success = True
+                best_prompt = prompt
+            # Finally, print the message
+            print(msg)
+            print()
+
+        end_time = time.time()
+        runtime_minutes = (end_time - start_time) / 60
+
+        print("SUMMARY")
+        print(f"Success: {'Y' if success else 'N'}")
+        print(f"Prompts Tested: {prompts_tested}")
+        print(f"Time: {runtime_minutes:.3f} min")
+        print(f"Best Prompt: {best_prompt}")
+        print("=" * 60)
+
+
+'''
+manual_character(model, tokenizer) - This method serves as one of the manual prompting methods,
+for testing the GPT-2 model. It takes in different prompts for grogu, mando, kuiil,peli, and fennec
+and splits up the letters in different forms for the prompting. This is to test that the GPT-2
+model can provide us correct results based on spelling prompting.
+    @param model - The model (GPT-2)
+    @param tokenizer - The tokenizer being used to take in for the model
+
+    @return 
+        Void, just prints out the results
+'''
+def manual_character(model, tokenizer):
+    # AI Usage for developing manual_character searching method. 
+    # Repeated structural methods for manual prompting the AI
+    tests = {
+        "grogu": [
+            "g-r-o-g-u spells",
+            "letters g r o g u",
+            "g r o g u"
+        ],
+
+        "mando": [
+            "m-a-n-d-o means",
+            "letters m a n d o",
+            "m a n d o"
+        ],
+
+        "kuiil": [
+            "k-u-i-i-l",
+            "letters k u i i l",
+            "k u i i l"
+        ],
+
+        "peli": [
+            "p-e-l-i",
+            "letters p e l i",
+            "p e l i"
+        ],
+
+        "fennec": [
+            "f-e-n-n-e-c",
+            "letters f e n n e c",
+            "f e n n e c"
+        ]
+    }
+
+    print("\n=== Manual Character Prompting ===\n")
+
+    for target, prompts in tests.items():
+        # Setting start time
+        start_time = time.time()
+
+        # Fields for verifying prompts, success, and best prompt
+        prompts_tested = 0
+        success = False
+        best_prompt = "N/A"
+
+        print(f"\nTesting target: {target}")
+        print("-" * 50)
+
+        # Iterting through all of the prompts
+        for prompt in prompts:
+            prompts_tested += 1
+            # Generating the output and printing out the messages
+            output = generate(model, tokenizer, prompt)
+            passed, msg = test_case(model, tokenizer, prompt, target)
+
+            print("Prompt:", prompt)
+            print("Output:", output[:100], "...")
+            # Checking if it passed
+            if passed:
+                success = True
+                best_prompt = prompt
+            # Finally, print the message
+            print(msg)
+            print()
+
+        end_time = time.time()
+        runtime_minutes = (end_time - start_time) / 60
+
+        print("SUMMARY")
+        print(f"Success: {'Y' if success else 'N'}")
+        print(f"Prompts Tested: {prompts_tested}")
+        print(f"Time: {runtime_minutes:.3f} min")
+        print(f"Best Prompt: {best_prompt}")
+        print("=" * 60)
+
+def manual_context(model, tokenizer):
+    tests = {
+        "grogu": [
+            "tiny green infant",
+            "green alien child",
+            "small mysterious infant"
+        ],
+
+        "mando": [
+            "masked bounty hunter",
+            "wandering masked fighter",
+            "silent helmet warrior"
+        ],
+
+        "kuiil": [
+            "old wise mechanic",
+            "desert engineer elder",
+            "quiet old inventor"
+        ],
+
+        "peli": [
+            "desert repair woman",
+            "spaceport mechanic",
+            "rough mechanic woman"
+        ],
+
+        "fennec": [
+            "silent assassin hunter",
+            "sharp sniper woman",
+            "desert assassin"
+        ]
+    }
+
+    print("\n=== Manual Context Prompting ===\n")
+
+    for target, prompts in tests.items():
+
+        start_time = time.time()
+
+        prompts_tested = 0
+        success = False
+        best_prompt = "N/A"
+
+        print(f"\nTesting target: {target}")
+        print("-" * 50)
+
+        for prompt in prompts:
+            prompts_tested += 1
+
+            output = generate(model, tokenizer, prompt)
+            passed, msg = test_case(model, tokenizer, prompt, target)
+
+            print("Prompt:", prompt)
+            print("Output:", output[:100], "...")
+
+            # Checking output is Passed
+            if passed:
+                success = True
+                # Choosing that prompt as best if passed
+                best_prompt = prompt
+
+            print(msg)
+            print()
+
+        end_time = time.time()
+        runtime_minutes = (end_time - start_time) / 60
+
+        print("SUMMARY")
+        print(f"Success: {'Y' if success else 'N'}")
+        print(f"Prompts Tested: {prompts_tested}")
+        print(f"Time: {runtime_minutes:.3f} min")
+        print(f"Best Prompt: {best_prompt}")
+        print("=" * 60)
 
 def main():
     model = AutoModelForCausalLM.from_pretrained("gpt2").eval()
@@ -493,5 +806,24 @@ def main():
     print(evaluate_target(model, tokenizer, TARGETS[4]))
     print("="*30, '\n')
     
+
+    # Personal implementation for character prompting
+    print("Manual_Character prompting")
+    manual_character(model, tokenizer)
+
+    # Personal implementation for context prompting
+    print("Manual_Context prompting")
+    manual_context(model, tokenizer)
+
+    # Personal implementation for acronym prompting
+    print("Manual_Acronym prompting")
+    manual_acronym(model, tokenizer)
+
+    # Personal implementation for phonetic prompting
+    print("Manual_Phonetic prompting")
+    manual_phonetic(model, tokenizer)
+
+
+
 
 main()
