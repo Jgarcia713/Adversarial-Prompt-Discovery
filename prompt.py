@@ -470,8 +470,16 @@ def main():
     manual_character(model, tokenizer)
 
     # Personal implementation for context prompting
-    # print("Manual_Conext prompting")
-    # manual_context(model, tokenizer)
+    print("Manual_Context prompting")
+    manual_context(model, tokenizer)
+
+    # Personal implementation for acronym prompting
+    print("Manual_Acronym prompting")
+    manual_acronym(model, tokenizer)
+
+    # Personal implementation for phonetic prompting
+    print("Manual_Phonetic prompting")
+    manual_phonetic(model, tokenizer)
 
 
 
