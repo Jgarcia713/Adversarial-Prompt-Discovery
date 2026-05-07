@@ -571,8 +571,6 @@ def check_near_miss(model, tokenizer, target, n_attempts=10):
             return True
     return False
 
-
-
 def manual_phonetic(model, tokenizer):
     # AI Usage for developing manual_character searching method. 
     # Repeated structural methods for manual prompting the AI
