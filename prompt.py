@@ -1,9 +1,35 @@
 """
-TODO add better docstring
-Use `generate` to produce GPT-2 output
-Use `test_case` to ensure an input is valid
+Adversial Prompt Discovery using GPT-2
 
+This file implements multiple approaches for generating any unseen target words
+like (grogu, mando, kuiil, etc.) by using the GPT-2 language model. Something important
+to note was that the GPT-2 model was trained and developed before the Mandalorian, so the
+model hasn't exactly memorized it for manual prompting
+
+The file includes:
+    1) Utility Methods
+        - generate() - produces the GPT-2 model output
+        - test_case() - validates the prompts under the assignment requirements
+    
+    2) Manual Prompting Methods:
+        - substring/prefix prompting
+        - character prompting
+        - context prompting
+        - phonetic prompting
+        - acronym prompting
+    
+    3) Automated Prompt Search:
+        - gradient-guided token optimization
+        - loss based scoring
+        - candidate token replacement
+
+    4) Evaluation tools:
+        - For success tracking
+        - Being able to reproduce results
+        - Any violation tracking
+        - Near miss detection
 """
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import torch.nn.functional as F
@@ -18,6 +44,30 @@ TARGETS = ["grogu", "mando", "kuiil", "peli", "fennec"]
 
 #### Core implementation 
 
+'''
+Evaluate whether a given rpompt satisfies all the assignment restrictions/requirements. And it will
+then successfully generate all the desired target keywords
+
+The prompt will either be a:
+    - raw string input
+    - a list of token ID's
+
+Restrictions:
+    1. The keyword must NOT appear in the prompt
+    2. The prompt must be <= max_tokens after the tokenization
+    3. The keyword must appear as it's own word in the GPT-2 output.
+
+Parameters:
+    @param model - The GPT-2 model that were using
+    @param tokenizer - The tokenizer to encode and decode the text
+    @param prompt - The input prompt were testing
+    @param keyword - The target word we are searching for
+    @param max_tokens - The maximum number of token length for the prompt
+
+Returns:
+    It will return a boolean if the test passed or failed, and then a string explaining why
+    it passed or failed
+'''
 def test_case(model, tokenizer, prompt, keyword, max_tokens=MAX_PROMPT_TOKENS):
     """
     Test whether a prompt satisfies all constraints AND generates the target.
@@ -53,6 +103,21 @@ def test_case(model, tokenizer, prompt, keyword, max_tokens=MAX_PROMPT_TOKENS):
         return (False, f"FAIL [constraint 3]: output = {repr(output)}")
     
 
+'''
+Generate text from the GPT-2 model using a prompt.
+
+The function uses a greedy decoding algorithm to always select the highest-probability for the 
+next token. This ensures that we create deterministic and reproducible outputs.
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer to convert the text to token ID's
+    @param prompt - The input prompt given
+    @param max_new_tokens - The maximum number of tokens to generate
+
+Returns:
+    It returns a string that represents the generated string from the model
+'''
 def generate(model, tokenizer, prompt, max_new_tokens=GENERATION_LENGTH):
     """
     Given a text prompt, return GPT-2's continuation as a string.
@@ -80,6 +145,16 @@ def generate(model, tokenizer, prompt, max_new_tokens=GENERATION_LENGTH):
 
 #### Baselines
 
+'''
+This is a simple method for printing out the target tokens that are produced
+from the GPT-2 model
+
+Parameters
+    @param tokenizer - the tokenizer for encoding and decoding the text
+
+Returns:
+    Nothing, just prints out the target tokens
+'''
 def print_target_tokens(tokenizer):
     """
     Print the target tokens in terms of their token IDs and components 
@@ -89,7 +164,19 @@ def print_target_tokens(tokenizer):
         pieces = [tokenizer.decode([i]) for i in ids]
         print(f"  {t:10s} -> {ids} -> {pieces}")
 
+'''
+This function test simple, and intuitive prompts that are expected to fail.
 
+These baseline prompts include common phrases that are related to Star Wars and
+are used to show that the GPT-2 model cannot trivially generate target names
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding and decoding the prompt 
+
+Returns:
+    Nothing, it just prints out the results
+'''
 def baseline_prompts(model, tokenizer):
     """
     Display simple prompts that do not work
@@ -108,6 +195,23 @@ def baseline_prompts(model, tokenizer):
 
 #### Substring/Prefix Inspired Prompts
 
+'''
+This function helps demonstrate the manual prompting strategies based on substrings and
+partial token fragments
+
+We are specifically using these prompts to help exploit the GPT-2 subword tokenization
+by providing the pieces of target words like ("grog" -> "grogu")
+
+This method words to help show us how the GPT-2 model handles closely aligned words (substrings)
+to intrepet what we are actually trying to show.
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer used for encoding and decoding
+
+Returns:
+    Nothing, just prints out the prompt, output, and validation results.
+'''
 def manual_substring(model, tokenizer):
     """
     Display a manual prompting strategy inspired by using substrings and prefixes
@@ -144,6 +248,19 @@ def manual_substring(model, tokenizer):
 
 
 #### Automated Prompt Searching
+'''
+This function will compute the negative log-likelihood loss of generating the target given a prompt.
+It measure how likely GPT-2 is to produce the target tokens from the prompt.
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+    @param prompt_ids - The list of token IDs representing the prompt
+    @param target - The target string to evaluate
+
+Returns:
+    It returns a float representing the total cross-entropy loss over the target tokens
+'''
 def compute_loss(model, tokenizer, prompt_ids, target):
     """
     Compute -log P(target tokens | prompt_ids).
@@ -487,7 +604,7 @@ def manual_phonetic(model, tokenizer):
         ]
     }
 
-    print("\n=== Manual Character Prompting ===\n")
+    print("\n=== Manual Phonetic Prompting ===\n")
     for target, prompts in tests.items():
         # Setting start time
         start_time = time.time()
@@ -567,7 +684,7 @@ def manual_acronym(model, tokenizer):
         ]
     }
 
-    print("\n=== Manual Character Prompting ===\n")
+    print("\n=== Manual Acronym Prompting ===\n")
     for target, prompts in tests.items():
         # Setting start time
         start_time = time.time()
