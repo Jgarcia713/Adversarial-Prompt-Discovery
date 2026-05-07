@@ -101,8 +101,6 @@ def test_case(model, tokenizer, prompt, keyword, max_tokens=MAX_PROMPT_TOKENS):
     output = generate(model, tokenizer, prompt)
     # outputted word should be standalone. e.x. "a grogu b" is good, "agrogub" is not
     if re.search(fr"\b{keyword.lower()}\b", output.lower()):
-    # outputted word should be standalone. e.x. "a grogu b" is good, "agrogub" is not
-    if re.search(fr"\b{keyword.lower()}\b", output.lower()):
         return (True, f"PASS: output = {repr(output)}")
     else:
         return (False, f"FAIL [constraint 3]: output = {repr(output)}")
@@ -294,7 +292,20 @@ def compute_loss(model, tokenizer, prompt_ids, target):
     
     return loss.item()
 
+'''
+This function will compute gradients of the loss with respect to each token embedding in the 
+prompt. These gradients indicate how much changing each token would affect the probability of
+generating the target.
 
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+    @param prompt_ids - The list of token IDs representing the prompt
+    @param target - The target string
+
+Returns:
+    It returns a gradient tensor of shape [prompt_len, embedding_dim]
+'''
 def compute_token_gradients(model, tokenizer, prompt_ids, target):
     """
     Returns: grad tensor of shape [prompt_len, 768]
@@ -334,7 +345,28 @@ def compute_token_gradients(model, tokenizer, prompt_ids, target):
     # grad shape: [1, prompt_len, 768] → squeeze to [prompt_len, 768]
     return prompt_embeds.grad.squeeze(0)
 
+'''
+This function selects the top-k candidate replacement tokens for a given prompt position using
+gradient information.
 
+This function compares the negative gradient direction against every
+token embedding in GPT-2's vocabulary. Tokens whose embeddings align
+best with the negative gradient are considered the strongest
+candidates for reducing loss.
+
+Higher alignment score means:
+    better candidate
+    more likely to improve prompt quality
+    more likely to increase target generation probability
+
+Parameters:
+    @param grad - A gradient vector for a single prompt position
+    @param embed_matrix - GPT-2 vocabulary embedding matrix
+    @param k - The number of top candidate tokens to return
+
+Returns:
+    A list of the top-k token IDs that best align with the gradient
+'''
 def get_top_k_candidates(grad, embed_matrix, k=20):
     """
     For a single token position:
@@ -350,6 +382,35 @@ def get_top_k_candidates(grad, embed_matrix, k=20):
     top_k_ids = scores.topk(k).indices.tolist()
     return top_k_ids
 
+'''
+This function finds the best token replacement at a specific position in the prompt.
+This method performs one optimization step in gradient-guided search.
+
+Process:
+1. Compute gradients for the current prompt
+2. Extract gradient at the chosen position
+3. Generate top-k candidate tokens
+4. Evaluate each candidate's loss
+5. Enforce assignment constraints
+6. Select the token that minimizes loss
+
+Constraint checks:
+- target word cannot appear in prompt
+- prompt must remain within token budget
+- prompt must retokenize correctly
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+    @param prompt_ids - Current prompt represented as token IDs
+    @param target - The target word to generate
+    @param position - Prompt position being optimized
+    @param k - The number of candidate replacement tokens evaluated
+
+Returns:
+    A tuple containing the best_token_id, best_losss, and constraint_tracker
+
+'''
 def find_best_replacement(model, tokenizer, prompt_ids, target, position, k=20):
     """
     At a given position in the prompt, find the token replacement 
@@ -397,6 +458,28 @@ def find_best_replacement(model, tokenizer, prompt_ids, target, position, k=20):
 
     return best_token, best_loss, constraint_tracker
 
+'''
+Perform gradient-guided discrete optimization to find prompts that maximize the probability of
+generating the target.
+
+Algorithm:
+    1) Initialize a random prompt
+    2) Iteratively replace tokens using gradient information
+    3) Track both local and global prompts 
+    4) Restarts when progress stalls
+
+Parameters: 
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+    @param target - The target word to generate
+    @param max_iters - The maximum number of optimization iterations
+    @param k - number of candidate tokens to consider per position
+    @param seed - A random seed for reproducibility
+    @param patience - The number of iterations without improvement before restart
+
+Returns:
+    It returns (best_prompt, constraint_tracker, prompt_count)
+'''
 def gradient_guided_search(model, tokenizer, target, max_iters=200, k=20, seed=42, patience=5):
     """
     Main gradient-guided discrete search loop.
@@ -471,7 +554,27 @@ def gradient_guided_search(model, tokenizer, target, max_iters=200, k=20, seed=4
     # (useful for near-miss analysis in your error analysis section)
     return global_best_prompt, constraint_tracker, prompt_count
 
+'''
+This function creates a random valid starting prompt for automated prompt optimization.
 
+This method randomly samples token IDs from GPT-2's vocabulary and
+decodes them into text until a valid prompt is found.
+
+A valid prompt must:
+1. NOT contain the target word
+2. Be within the maximum token budget
+3. Retokenize cleanly within the token limit
+
+This serves as the starting point for gradient-guided search.
+
+Parameters:
+    @param tokenizer - the tokenizer for encoding/decoding
+    @param target - The target word that must not appear in the prompt
+    @param max_tokens - The maximum number of allowed length for the tokens
+
+Returns:
+    A list of token IDs that represent a valid random prompt
+'''
 def initialize_random_prompt(tokenizer, target, max_tokens=10):
     """Generate a random valid starting prompt."""
     while True:
@@ -483,6 +586,26 @@ def initialize_random_prompt(tokenizer, target, max_tokens=10):
             if len(tokenizer.encode(decoded)) <= max_tokens:
                 return ids
 
+'''
+This function evaluates the automated search performance for a given prompt
+
+It measures:
+    - search success rate
+    - reproducibility of the found prompts
+    - number of prompts tested
+    - constraint violations
+    - best performing prompt
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+    @param target - The target word
+    @param n_searches - the number of independent search runs
+    @param n_repro - The number of repreated evaluations per sucessful prompt
+
+Returns:
+    It returns a dictionary of the summary of the results
+'''
 def evaluate_target(model, tokenizer, target, n_searches=20, n_repro=10):
     """
     Full evaluation for one target keyword.
@@ -560,7 +683,29 @@ def evaluate_target(model, tokenizer, target, n_searches=20, n_repro=10):
         "total_eval": constraint_tracker['total_eval'],
     }
 
+'''
+This function determines whether GPT-2 generates outputs that are close to the target word,
+even if the full target is not produced exactly.
 
+A near miss is defined as generated text containing the beginning (prefix) of the target word
+without containing the full word itself
+For example:
+    target = "grogu"
+    near miss = "grog"
+    full success = "grogu"
+
+This method is mostly being used for error analysis, so we can see and fully analyze how close
+the GPT-2 model gets to getting the correct target word
+
+Parameters:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding and decoding
+    @param target - The target word being evaluated
+    @param n_attempts - The number of random prompt attempts used to search for the near misses
+
+Returns:    
+    It returns True when it's a near miss, and false otherwise
+'''
 def check_near_miss(model, tokenizer, target, n_attempts=10):
     """
     Check if GPT-2 produces outputs that are close to the target
@@ -577,6 +722,19 @@ def check_near_miss(model, tokenizer, target, n_attempts=10):
             return True
     return False
 
+'''
+This function performs manual prompting using phonetic descriptions/prompts.
+
+The prompts are designed to resemble descriptions of the targets characters without explicitly
+naming them. This is supposed to test whether GPT-2 can infer target words from phonetics alone
+
+Parameter:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+
+Returns:
+    Nothing, just prints out the results and summary stats 
+'''
 def manual_phonetic(model, tokenizer):
     # AI Usage for developing manual_character searching method. 
     # Repeated structural methods for manual prompting the AI
@@ -818,6 +976,19 @@ def manual_character(model, tokenizer):
         print(f"Best Prompt: {best_prompt}")
         print("=" * 60)
 
+'''
+This function performs manual prompting using semantic and descriptive context.
+
+The prompts are designed to resemble descriptions of the targets characters without explicitly
+naming them. This is supposed to test whether GPT-2 can infer target words from context alone
+
+Parameter:
+    @param model - The GPT-2 model
+    @param tokenizer - The tokenizer for encoding/decoding
+
+Returns:
+    Nothing, just prints out the results and summary stats 
+'''
 def manual_context(model, tokenizer):
     tests = {
         "grogu": [
