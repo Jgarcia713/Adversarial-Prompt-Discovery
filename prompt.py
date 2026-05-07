@@ -75,20 +75,20 @@ def test_case(model, tokenizer, prompt, keyword, max_tokens=MAX_PROMPT_TOKENS):
 
     # Condition 1: keyword not in prompt
     if keyword.lower() in prompt.lower():
-        return (False, f"FAIL [constraint 1]: prompt contains '{keyword}'")
+        return (False, 1, f"FAIL [constraint 1]: prompt contains '{keyword}'")
     
     # Condition 2: token length — ALWAYS check re-tokenized length
     actual_length = len(tokenizer.encode(prompt))
     if actual_length > max_tokens:
-        return (False, f"FAIL [constraint 2]: {actual_length} tokens > {max_tokens}")
+        return (False, 2, f"FAIL [constraint 2]: {actual_length} tokens > {max_tokens}")
     
     # Condition 3: keyword in generated output
     output = generate(model, tokenizer, prompt)
     # outputted word should be standalone. e.x. "a grogu b" is good, "agrogub" is not
     if re.search(fr"\b{keyword.lower()}\b", output.lower()):
-        return (True, f"PASS: output = {repr(output)}")
+        return (True, 0, f"PASS: output = {repr(output)}")
     else:
-        return (False, f"FAIL [constraint 3]: output = {repr(output)}")
+        return (False, 3, f"FAIL [constraint 3]: output = {repr(output)}")
     
 
 def generate(model, tokenizer, prompt, max_new_tokens=GENERATION_LENGTH):
@@ -162,7 +162,7 @@ Returns:
     baselines = ["Star Wars", "baby yoda", "bounty hunter", "din djarin"]
     for prompt in baselines:
         for target in TARGETS:
-            passed, msg = test_case(model, tokenizer, prompt, target)
+            passed, _, _ = test_case(model, tokenizer, prompt, target)
             if passed:  # Flag any surprising passes
                 print(f"  UNEXPECTED PASS: '{prompt}' -> {target}")
                 passed = True
@@ -778,7 +778,7 @@ def manual_phonetic(model, tokenizer):
             prompts_tested += 1
             # Generating the output and printing out the messages
             output = generate(model, tokenizer, prompt)
-            passed, msg = test_case(model, tokenizer, prompt, target)
+            passed, _, msg = test_case(model, tokenizer, prompt, target)
 
             print("Prompt:", prompt)
             print("Output:", output[:100], "...")
@@ -860,7 +860,7 @@ def manual_acronym(model, tokenizer):
             prompts_tested += 1
             # Generating the output and printing out the messages
             output = generate(model, tokenizer, prompt)
-            passed, msg = test_case(model, tokenizer, prompt, target)
+            passed, _, msg = test_case(model, tokenizer, prompt, target)
 
             print("Prompt:", prompt)
             print("Output:", output[:100], "...")
@@ -949,7 +949,7 @@ def manual_character(model, tokenizer):
             prompts_tested += 1
             # Generating the output and printing out the messages
             output = generate(model, tokenizer, prompt)
-            passed, msg = test_case(model, tokenizer, prompt, target)
+            passed, _, msg = test_case(model, tokenizer, prompt, target)
 
             print("Prompt:", prompt)
             print("Output:", output[:100], "...")
@@ -1035,7 +1035,7 @@ def manual_context(model, tokenizer):
             prompts_tested += 1
 
             output = generate(model, tokenizer, prompt)
-            passed, msg = test_case(model, tokenizer, prompt, target)
+            passed, _, msg = test_case(model, tokenizer, prompt, target)
 
             print("Prompt:", prompt)
             print("Output:", output[:100], "...")
@@ -1063,13 +1063,13 @@ def main():
     model = AutoModelForCausalLM.from_pretrained("gpt2").eval()
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
-    # print("\nThe targets tokenize like so:")
-    # print_target_tokens(tokenizer)
-    # print("="*30)
+    print("\nThe targets tokenize like so:")
+    print_target_tokens(tokenizer)
+    print("="*30)
 
-    # print("\n=== Baseline prompts (should all fail) ===")
-    # baseline_prompts(model, tokenizer)
-    # print("="*30)
+    print("\n=== Baseline prompts (should all fail) ===")
+    baseline_prompts(model, tokenizer)
+    print("="*30)
 
     print("Manual Substring/Prefix inspired prompting")
     manual_substring(model, tokenizer)
