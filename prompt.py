@@ -36,10 +36,6 @@ import torch.nn.functional as F
 import random
 import re
 from collections import Counter
-import torch.nn.functional as F
-import random
-import re
-from collections import Counter
 import time
 
 MAX_PROMPT_TOKENS = 10
@@ -48,7 +44,7 @@ TARGETS = ["grogu", "mando", "kuiil", "peli", "fennec"]
 
 #### Core implementation 
 '''
-Evaluate whether a given rpompt satisfies all the assignment restrictions/requirements. And it will
+Evaluate whether a given prompt satisfies all the assignment restrictions/requirements. And it will
 then successfully generate all the desired target keywords
 
 The prompt will either be a:
@@ -99,8 +95,6 @@ def test_case(model, tokenizer, prompt, keyword, max_tokens=MAX_PROMPT_TOKENS):
     
     # Condition 3: keyword in generated output
     output = generate(model, tokenizer, prompt)
-    # outputted word should be standalone. e.x. "a grogu b" is good, "agrogub" is not
-    if re.search(fr"\b{keyword.lower()}\b", output.lower()):
     # outputted word should be standalone. e.x. "a grogu b" is good, "agrogub" is not
     if re.search(fr"\b{keyword.lower()}\b", output.lower()):
         return (True, f"PASS: output = {repr(output)}")
@@ -577,6 +571,42 @@ def check_near_miss(model, tokenizer, target, n_attempts=10):
             return True
     return False
 
+def random_search(model, tokenizer, target, max_iters=100, seed=42, n_searches=5):
+    random.seed(seed)
+    torch.manual_seed(seed)
+
+    total_tested = 0
+    successes = 0
+
+    best_prompt = None
+    best_loss = float('inf')
+    for _ in range(n_searches):
+        for i in range(1, max_iters+1):
+            total_tested += 1
+            prompt = initialize_random_prompt(tokenizer, target)
+            loss = compute_loss(model, tokenizer, prompt, target)
+            if loss < best_loss:
+                best_loss = loss
+                best_prompt = tokenizer.decode(prompt)
+            
+            decoded = tokenizer.decode(prompt)
+            passed, _, _ = test_case(model, tokenizer, decoded, target)
+
+            if passed:
+                print(f"  Found at iteration {i}: '{decoded}'")
+                successes += 1
+                break
+            
+            if i % 50 == 0:
+                print(f"  Iter {i}: prompt='{decoded}'")
+    
+    results = {"target":target, 
+             "success_rate":successes, 
+             "prompt_count": total_tested, 
+             "best_prompt": best_prompt}
+    return results
+
+
 def manual_phonetic(model, tokenizer):
     # AI Usage for developing manual_character searching method. 
     # Repeated structural methods for manual prompting the AI
@@ -908,6 +938,26 @@ def main():
     manual_substring(model, tokenizer)
     print("="*30)
 
+    # Personal implementation for character prompting
+    print("Manual_Character prompting")
+    manual_character(model, tokenizer)
+    print("="*30)
+
+    # Personal implementation for context prompting
+    print("Manual_Context prompting")
+    manual_context(model, tokenizer)
+    print("="*30)
+
+    # Personal implementation for acronym prompting
+    print("Manual_Acronym prompting")
+    manual_acronym(model, tokenizer)
+    print("="*30)
+
+    # Personal implementation for phonetic prompting
+    print("Manual_Phonetic prompting")
+    manual_phonetic(model, tokenizer)
+    print("="*30)
+
     print("\n=== Automated Prompt Search ===")
     print(f"Target= {TARGETS[0]}") # grogu
     print(evaluate_target(model, tokenizer, TARGETS[0]))
@@ -928,24 +978,6 @@ def main():
     print(f"Target= {TARGETS[4]}") # fennec
     print(evaluate_target(model, tokenizer, TARGETS[4]))
     print("="*30, '\n')
-    
-
-    # Personal implementation for character prompting
-    print("Manual_Character prompting")
-    manual_character(model, tokenizer)
-
-    # Personal implementation for context prompting
-    print("Manual_Context prompting")
-    manual_context(model, tokenizer)
-
-    # Personal implementation for acronym prompting
-    print("Manual_Acronym prompting")
-    manual_acronym(model, tokenizer)
-
-    # Personal implementation for phonetic prompting
-    print("Manual_Phonetic prompting")
-    manual_phonetic(model, tokenizer)
-
 
 
 
