@@ -571,40 +571,6 @@ def check_near_miss(model, tokenizer, target, n_attempts=10):
             return True
     return False
 
-def random_search(model, tokenizer, target, max_iters=100, seed=42, n_searches=5):
-    random.seed(seed)
-    torch.manual_seed(seed)
-
-    total_tested = 0
-    successes = 0
-
-    best_prompt = None
-    best_loss = float('inf')
-    for _ in range(n_searches):
-        for i in range(1, max_iters+1):
-            total_tested += 1
-            prompt = initialize_random_prompt(tokenizer, target)
-            loss = compute_loss(model, tokenizer, prompt, target)
-            if loss < best_loss:
-                best_loss = loss
-                best_prompt = tokenizer.decode(prompt)
-            
-            decoded = tokenizer.decode(prompt)
-            passed, _, _ = test_case(model, tokenizer, decoded, target)
-
-            if passed:
-                print(f"  Found at iteration {i}: '{decoded}'")
-                successes += 1
-                break
-            
-            if i % 50 == 0:
-                print(f"  Iter {i}: prompt='{decoded}'")
-    
-    results = {"target":target, 
-             "success_rate":successes, 
-             "prompt_count": total_tested, 
-             "best_prompt": best_prompt}
-    return results
 
 
 def manual_phonetic(model, tokenizer):
