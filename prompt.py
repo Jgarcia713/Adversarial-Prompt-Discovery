@@ -36,10 +36,6 @@ import torch.nn.functional as F
 import random
 import re
 from collections import Counter
-import torch.nn.functional as F
-import random
-import re
-from collections import Counter
 import time
 
 MAX_PROMPT_TOKENS = 10
@@ -48,7 +44,7 @@ TARGETS = ["grogu", "mando", "kuiil", "peli", "fennec"]
 
 #### Core implementation 
 '''
-Evaluate whether a given rpompt satisfies all the assignment restrictions/requirements. And it will
+Evaluate whether a given prompt satisfies all the assignment restrictions/requirements. And it will
 then successfully generate all the desired target keywords
 
 The prompt will either be a:
@@ -1079,6 +1075,26 @@ def main():
     manual_substring(model, tokenizer)
     print("="*30)
 
+    # Personal implementation for character prompting
+    print("Manual_Character prompting")
+    manual_character(model, tokenizer)
+    print("="*30)
+
+    # Personal implementation for context prompting
+    print("Manual_Context prompting")
+    manual_context(model, tokenizer)
+    print("="*30)
+
+    # Personal implementation for acronym prompting
+    print("Manual_Acronym prompting")
+    manual_acronym(model, tokenizer)
+    print("="*30)
+
+    # Personal implementation for phonetic prompting
+    print("Manual_Phonetic prompting")
+    manual_phonetic(model, tokenizer)
+    print("="*30)
+
     print("\n=== Automated Prompt Search ===")
     print(f"Target= {TARGETS[0]}") # grogu
     print(evaluate_target(model, tokenizer, TARGETS[0]))
@@ -1099,24 +1115,6 @@ def main():
     print(f"Target= {TARGETS[4]}") # fennec
     print(evaluate_target(model, tokenizer, TARGETS[4]))
     print("="*30, '\n')
-    
-
-    # Personal implementation for character prompting
-    print("Manual_Character prompting")
-    manual_character(model, tokenizer)
-
-    # Personal implementation for context prompting
-    print("Manual_Context prompting")
-    manual_context(model, tokenizer)
-
-    # Personal implementation for acronym prompting
-    print("Manual_Acronym prompting")
-    manual_acronym(model, tokenizer)
-
-    # Personal implementation for phonetic prompting
-    print("Manual_Phonetic prompting")
-    manual_phonetic(model, tokenizer)
-
 
 
 
